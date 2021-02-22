@@ -1,0 +1,21 @@
+using PlotlyJS
+
+t1 = scatter(;x=[1, 2, 3, 4, 5],
+              y=[1, 6, 3, 6, 1],
+              mode="lines",
+              name="Team A",
+              text=["A-1", "A-2", "A-3", "A-4", "A-5"])
+
+t2 = scatter(;x=[1, 2, 3, 4, 5],
+             y=[10, 60, 30, 60, 10],
+             mode="lines",
+             name="Team B",
+             text=["B-1", "B-2", "B-3", "B-4", "B-5"])
+
+layout = Layout(;title="Data Labels Hover",
+                 xaxis_range=[0, 10],
+                 yaxis_range=[0, 100])
+
+data = [t1, t2]
+
+PlotlyJS.plot(data, layout)

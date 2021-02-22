@@ -21,7 +21,7 @@ sigma_v = 0.254146903
 N_v = mu/gamma
 r= max(r_1,r_2)
 u_0 = [97.0,1.0,2.0,3.0,4.0]
-T = 50.0
+T = 100.0
 time = (0.0,T)
 N_p = u_0[1]+u_0[2]+u_0[3]
 dt=0.01
@@ -63,14 +63,26 @@ end
 prob_sde_tomato_sys = SDEProblem(F_Drift,G_Diffusion,u_0,time,noise_rate_prototype=zeros(5,2))
 sol = solve(prob_sde_tomato_sys)
 
-################################################################################
+#################w###############################################################
 ########################## Monte  Carlo Ensamble ###############################
 ################################################################################
 monte_prob = MonteCarloProblem(prob_sde_tomato_sys)
 sim = solve(monte_prob,trajectories=10)
 summ_1 = MonteCarloSummary(sim,t_s)
 summ_2 = MonteCarloSummary(sim,t_s;quantiles=[0.25,0.75])
-
+################################################################################
+################### To comprovate the conservation law #########################
+################################################################################
+#=
+Datos2=DataFrame()
+component = componentwise_vectors_timepoint(sim,t_s) #gives all solution in time vector t_s
+component = transpose(component) #transpose to obtain any*5 data matrix
+component = vcat(component...) #to obtain shape for dataframe
+component = vcat(component...) # again do a reshape
+variables = DataFrame(component) # define first data frame
+Datos1 = DataFrame(S_p = variables[:,1], L_p = variables[:,2], I_p = variables[:,3]) #only some variables
+Datos2 = append!(Datos2, Datos1)
+=#
 
 ################################################################################
 #############################    Plot Summary   ################################
@@ -91,6 +103,7 @@ q5=plot!(summ_2,idxs=(5),labels="Middle 50%",legend=true)
 
 plot(q1,q2,q3,q4,q5,title,layout = @layout([ [A B C]; [D E F]]), label="")
 
+#=
 ################################################################################
 ########################    data  Media    #####################################
 ################################################################################
@@ -147,3 +160,4 @@ DF5 = DataFrame(t = time,S_p = YY1, I_p = YY3, I_v = YY5)
 
 CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code/R0+1//Persistence_Q50p_low.csv",DF4)
 CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code/R0+1//Persistence_Q50p_high.csv",DF5)
+=#

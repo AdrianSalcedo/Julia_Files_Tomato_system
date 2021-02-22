@@ -2,9 +2,7 @@ using DifferentialEquations
 using Plots; plotly()
 using DifferentialEquations.EnsembleAnalysis
 using CSV
-using DataFrames
-using DiffEqGPU
-#using CuArrays
+using IterableTables, DataFrames, DataTables
 using StochasticDiffEq
 
 beta_p = 0.8
@@ -21,7 +19,7 @@ sigma_v = 0.254146903
 N_v = mu/gamma
 r= max(r_1,r_2)
 u_0 = [97.0,1.0,2.0,3.0,4.0]
-T = 50.0
+T = 100.0
 time = (0.0,T)
 N_p = u_0[1]+u_0[2]+u_0[3]
 dt=0.01
@@ -75,11 +73,11 @@ prob_det = ODEProblem(F_Det,u_0,time)
 det_sol = solve(prob_det,Tsit5())
 ########################## Stochastis Solution #################################
 prob_sde_tomato_sys = SDEProblem(F_Drift,G_Diffusion,u_0,time,noise_rate_prototype=zeros(5,2))
-sol = solve(prob_sde_tomato_sys,dt=dt)
+sol = solve(prob_sde_tomato_sys)
 ################################################################################
 ############################ PLot variables ####################################
 ################################################################################
-
+#=
 title = plot(title = "R_s =$Rs0", grid = false, showaxis = false, bottom_margin = -50Plots.px)
 p1=plot(det_sol,vars=(1),color="blue")
 p1=plot!(sol,vars=(1),color="darkgreen",title="Susc. p.")
@@ -93,16 +91,58 @@ p5=plot(det_sol,vars=(5),color="blue")
 p5=plot!(sol,vars=(5),color="red",title ="Infec. v.")
 
 plot(p1,p2,p3,p4,p5,title,layout = @layout([ [A B C]; [D E F]]), label="")
+=#
 
 ################################################################################
 ########################## Monte  Carlo Ensamble ###############################
 ################################################################################
+#=monte_prob = MonteCarloProblem(prob_sde_tomato_sys)
+sim = solve(monte_prob,trajectories=2)
+t_s=range(0.0,T, step=1.0)
+component = componentwise_vectors_timepoint(sim,t_s)
+componerob.p[3:4] = 0.3rand(2)
+  probnt = transpose(component) #transpose to obtain any*5 data matrix
+component = vcat(component...) #to obtain shape for dataframe
+component = vcat(component...) # again do a reshape
+variables = DataFrame(component)
+Datos1 = DataFrame(t = t_s, S_p = variables[:,1], I_p = variables[:,3], I_v = variables[:,5])
+=#
+Datos2=DataFrame()
+t_s=range(0.0,T, step=1.0)
 
+#t_step=DataFrame(t = t_s)
+#CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code/R0+1/Trajectories//DataTime.csv",t_step)
+trajectories = 1
+for i in 1:10000
+    monte_prob = MonteCarloProblem(prob_sde_tomato_sys)
+    sim = solve(monte_prob,trajectories=trajectories)
+    component = componentwise_vectors_timepoint(sim,t_s) #gives all solution in time vector t_s
+    component = transpose(component) #transpose to obtain any*5 data matrix
+    component = vcat(component...) #to obtain shape for dataframe
+    component = vcat(component...) # again do a reshape
+    variables = DataFrame(component) # define first data frame
+    Datos1 = DataFrame(t = t_s, S_p = variables[:,1], I_p = variables[:,3], I_v = variables[:,5]) #only some variables
+    Datos2 = append!(Datos2, Datos1)#append the data in the loop
+end
+
+#CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code/R0+1/Trajectories//Data11.csv",Datos2)
+CSV.write("C:/Users/adria/Dropbox/Artículos/JuliaPro_code/R0+1/Trajectories//Data.csv",Datos2)
+
+#CSV.write("C:/Users/adria/Dropbox/Artículos/JuliaPro_code/R0+1/Trajectories//Data$k.csv",df)
+#=
 monte_prob = MonteCarloProblem(prob_sde_tomato_sys)
-sim = solve(monte_prob,dt=dt,trajectories=3000)
+sim = solve(monte_prob,dt=dt,trajectories=trajectories)
+=#
+#=for i in 1:2:trajectories
+          df = DataTable(sim.u[i])
+          CSV.write("C:/Users/adria/Dropbox/Artículos/JuliaPro_code/R0+1/Trajectories//Data_$i.csv",df)
+      end
+
 summ_1 = MonteCarloSummary(sim,0:0.1:T)
 summ_2 = MonteCarloSummary(sim,0:0.1:T;quantiles=[0.25,0.75])
+=#
 
+#=
 plotly()
 title = plot(title = "R_s =$Rs0", grid = false, showaxis = false, bottom_margin = -50Plots.px)
 q1=plot(summ_1,idxs=(1),labels="Middle 95%")
@@ -115,7 +155,6 @@ q4=plot(summ_1,idxs=(4),labels="Middle 95%")
 q4=plot!(summ_2,idxs=(4),labels="Middle 50%",legend=true)
 q5=plot(summ_1,idxs=(5),labels="Middle 95%")
 q5=plot!(summ_2,idxs=(5),labels="Middle 50%",legend=true)
-
 
 plot(q1,q2,q3,q4,q5,title,layout = @layout([ [A B C]; [D E F]]), label="")
 
@@ -239,4 +278,11 @@ CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code//DataU.csv",DF1
 CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code//DataV.csv",DF2)
 
 =#
-#CSV.write("/home/gabrielsalcedo/Dropbox/Artículos/JuliaPro_code//QlData.csv",DFQL)
+#CSV.write("/home/gabrielsalcedo/sim = solve(monte_prob,dt=dt,trajectories=10)Dropbox/Artículos/JuliaPro_code//QlData.csv",DFQL)
+for j in 0:10:90
+    for i in 1:10
+        k=i+j
+        print("$k ");
+    end
+end
+=#
